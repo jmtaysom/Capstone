@@ -4,6 +4,7 @@ library(quanteda)
 library(stringr)
 library(plyr)
 library(dplyr)
+library(data.table)
 #Download the data for the capstone
 setwd("~/Capstone")
 url = 'https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip'
@@ -16,9 +17,9 @@ rm(zip)
 con <- file('final/en_US/en_US.blogs.txt',"r")
 twi.con <- file('final/en_US/en_US.twitter.txt','r')
 news.con <-file('final/en_US/en_US.news.txt','r') 
-blogs <- readLines(con, 50000)
-twitter <- readLines(twi.con, 50000)
-news <- readLines(news.con, 50000)
+blogs <- readLines(con, 100000)
+twitter <- readLines(twi.con, 100000)
+news <- readLines(news.con, 100000)
 #blog.mid <- readLines(con, 20000)
 close(con)
 rm(con)
@@ -29,6 +30,7 @@ rm(news.con)
 
 #write.table(blogs, file='blogs_sample.txt')
 blogs <- readLines(file('blogs_sample.txt'))
+tf <- read.table(file('tf3_100k.txt'))
 #blogs <- iconv(blogs, to = "utf-8", sub="")
 #blog_corpus<- corpus(blogs)
 rm(blogs)
@@ -55,14 +57,129 @@ tf.blog <- add_rownames(tf.blog)
 tf.twit <- topfeatures(twit.ngram, n = ncol(twit.ngram))
 tf.twit <- data.frame(tf.twit)
 tf.twit <- add_rownames(tf.twit)
+tf.news <- topfeatures(news.ngram, n = ncol(news.ngram))
+tf.news <- data.frame(tf.news)
+tf.news <- add_rownames(tf.news)
+
+rm(blog.ngram)
+rm(news.ngram)
+rm(twit.ngram)
+
+names(tf.blog)[names(tf.blog)=="tf.blog"] <- "tf"
+names(tf.news)[names(tf.news)=="tf.news"] <- "tf"
+names(tf.twit)[names(tf.twit)=="tf.twit"] <- "tf"
+tf <- rbind(tf.news, tf.twit, tf.blog)
+tf <- aggregate(tf~rowname, data=tf, FUN=sum)
+tf <- tf[tf$tf>1,]
+#tf[grep('^mean_the',tf$rowname),]
+
+#temp<- str_split_fixed(tf$rowname,'_',3)
+tf <- cbind(tf,str_split_fixed(tf$rowname,'_',3))
+tf <- tf[order(-tf$tf),]
+tfc <- cbind(tf$`1`, tf$`2`)
+dup <- duplicated(tfc)
+tf <- tf[!dup,]
+
+drops <- c("tf","rowname")
+tf<- tf[,!(names(tf) %in% drops)]
+#write.table(tf, file='tf3_100k.txt')
+as.character(tf[tf$`1` == 'must' & tf$`2` == 'be',]$`3`)
+
+####################### 4gram ##########################
+blog.ngram <- dfm(blogs, ngrams = 4:4, verbose = FALSE)
+tf.blog <- topfeatures(blog.ngram, n = ncol(blog.ngram))
+tf.blog <- data.frame(tf.blog)
+tf.blog <- add_rownames(tf.blog)
+rm(blog.ngram)
+rm(blogs)
+twit.ngram <- dfm(twitter, ngrams = 4:4, verbose = FALSE)
+tf.twit <- topfeatures(twit.ngram, n = ncol(twit.ngram))
+tf.twit <- data.frame(tf.twit)
+tf.twit <- add_rownames(tf.twit)
+rm(twit.ngram)
+rm(twitter)
+news.ngram <- dfm(news, ngrams = 4:4, verbose = FALSE)
+tf.news <- topfeatures(news.ngram, n = ncol(news.ngram))
+tf.news <- data.frame(tf.news)
+tf.news <- add_rownames(tf.news)
+rm(news.ngram)
+rm(news)
+
+names(tf.blog)[names(tf.blog)=="tf.blog"] <- "tf"
+names(tf.news)[names(tf.news)=="tf.news"] <- "tf"
+names(tf.twit)[names(tf.twit)=="tf.twit"] <- "tf"
+tf4 <- rbind(tf.news, tf.twit, tf.blog)
+rm( tf.blog)
+rm(tf.news)
+rm(tf.twit)
+#write.table(tf4, file='tf4_100k.txt')
+tf4 <- read.table('tf4_100k.txt')
+tf4 <- data.table(tf4)
+setkey(tf4,rowname)
+tf4 <- tf4[,sum(tf),by=rowname]
+tf4 <- tf4[tf4$tf>1,]
+#tf[grep('^mean_the',tf$rowname),]
+tf4 <- cbind(tf4,str_split_fixed(tf4$rowname,'_',4))
+tf4 <- tf4[order(-tf4$V1),]
+tf4[,2] <- NULL
+tfc <- cbind(tf4$V1, tf4$V2, tf4$V3)
+dup <- duplicated(tfc)
+tf4 <- tf4[!dup,]
+rm(dup)
+rm(tfc)
+
+tf4[,1] <- NULL
+write.table(tf4, file='tf4_100k.txt')
+a<- as.character(tf4[tf4$V1 == 'a' & tf4$V2 == 'case' & tf4$V3 == 'merry',]$V4)
+identical(a,character(0))
 
 
-temp<- str_split_fixed(df.tf$rowname,'_',2)
-df.tf <- cbind(df.tf,temp)
-dup <- duplicated(df.tf$`1`)
-df.tf.sub<-df.tf[!dup,]
-as.character(df.tf.sub[df.tf.sub$`1` == 'merry',]$`2`)
+########################### bigram #######################
 
+blog.ngram <- dfm(blogs, ngrams = 2:2, verbose = FALSE)
+twit.ngram <- dfm(twitter, ngrams = 2:2, verbose = FALSE)
+news.ngram <- dfm(news, ngrams = 2:2, verbose = FALSE)
+#bigram <- tokenize(toLower(blogs), removePunct = TRUE, removeNumbers = TRUE, ngrams =2)
+#bigram.test<- sum(ntoken(bigram))
+tf.blog <- topfeatures(blog.ngram, n = ncol(blog.ngram))
+tf.blog <- data.frame(tf.blog)
+tf.blog <- add_rownames(tf.blog)
+tf.twit <- topfeatures(twit.ngram, n = ncol(twit.ngram))
+tf.twit <- data.frame(tf.twit)
+tf.twit <- add_rownames(tf.twit)
+tf.news <- topfeatures(news.ngram, n = ncol(news.ngram))
+tf.news <- data.frame(tf.news)
+tf.news <- add_rownames(tf.news)
+
+rm(blog.ngram)
+rm(news.ngram)
+rm(twit.ngram)
+
+names(tf.blog)[names(tf.blog)=="tf.blog"] <- "tf"
+names(tf.news)[names(tf.news)=="tf.news"] <- "tf"
+names(tf.twit)[names(tf.twit)=="tf.twit"] <- "tf"
+tf2 <- rbind(tf.news, tf.twit, tf.blog)
+rm( tf.blog)
+rm(tf.news)
+rm(tf.twit)
+tf2 <- aggregate(tf~rowname, data=tf2, FUN=sum)
+tf2 <- tf2[tf2$tf>1,]
+
+tf2 <- cbind(tf2, str_split_fixed(tf2$rowname,'_',2))
+tf2 <- tf2[order(-tf2$tf),]
+dup <- duplicated(tf2$`1`)
+tf2 <- tf2[!dup,]
+tf2[,1:2] <-list(NULL)
+#write.table(tf2, file='tf2_100k.txt')
+
+###################### testing ###########
+
+
+
+
+
+
+####################### old ###############
 
 #dfm.bi <- dfm(bigram)
 
