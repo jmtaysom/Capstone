@@ -9,21 +9,61 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r, results =FALSE}
+```{r, results =FALSE, cache=TRUE}
 library(R.utils)
 library(quanteda)
 setwd("~/Capstone")
+```
 
-
+```{r}
 blog.lines <- countLines('final/en_US/en_US.blogs.txt')
 twit.lines <- countLines('final/en_US/en_US.twitter.txt')
 news.lines <- countLines('final/en_US/en_US.news.txt') 
+x = c('Blogs', "Twitter", "News")
+y = c(blog.lines,twit.lines,news.lines)
+df <- data.frame(x,y)
+barplot(df$y, names.arg = df$x, main='Records per file')
+```
 
-unigram <- tokenize(toLower(blogs), removePunct = TRUE, removeNumbers = TRUE, ngrams =2)
+```{r}
+con <- file('final/en_US/en_US.blogs.txt',"r")
+blogs <- readLines(con, 100000)
+unigram.b <- tokenize(toLower(blogs), removePunct = TRUE, removeNumbers = TRUE, ngrams =1)
+unigram.b <- unlist(unigram.b)
+unigram.b <- unigram[!duplicated(unigram.b)]
+rm(blogs)
+con <- file('final/en_US/en_US.twitter.txt',"r")
+twitter <- readLines(con, 100000)
+unigram.t <- tokenize(toLower(twitter), removePunct = TRUE, removeNumbers = TRUE, ngrams =1)
+unigram.t <- unlist(unigram.t)
+unigram.t <- unigram[!duplicated(unigram.t)]
+rm(twitter)
+con <- file('final/en_US/en_US.news.txt',"r")
+news <- readLines(con, 100000)
+unigram.n <- tokenize(toLower(news), removePunct = TRUE, removeNumbers = TRUE, ngrams =1)
+unigram.n <- unlist(unigram.n)
+unigram.n <- unigram[!duplicated(unigram.n)]
+rm(news)
+print(length(unigram.b))
+print(length(unigram.t))
+print(length(unigram.n))
 ```
 
 
 ```{r}
+tf <- read.table('tf_100k.txt')
+tf <- tf[order(-tf$tf),]
+tf.sub <- tf[1:30,]
+tf.sub <- cbind(tf.sub, 1:30)
+barplot(tf.sub$tf, names.arg = tf.sub$`1:30`, main = 'Top 30 Trigrams', xlab='Rank of Trigram', ylab='Count')
+```
 
+```{r}
+tf2 <- read.table('tf2_100k.txt',nrows = 5)
+tf3 <- read.table('tf3_100k.txt',nrows = 5)
+tf4 <- read.table('tf4_100k.txt',nrows = 5)
+print(tf2)
+print(tf3)
+print(tf4)
 
 ```
