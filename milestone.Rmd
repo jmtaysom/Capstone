@@ -5,15 +5,15 @@ date: "December 28, 2015"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This is the milestone report for the Johns Hopkins Data Science capstone. In this project we are using data from swiftkey to try to do next word predictions.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r, results =FALSE, cache=TRUE}
+```{r, message =FALSE}
 library(R.utils)
 library(quanteda)
 setwd("~/Capstone")
 ```
+
+After downloading and extracting the data it was examined to determine the size of each dataset.
 
 ```{r}
 blog.lines <- countLines('final/en_US/en_US.blogs.txt')
@@ -25,30 +25,36 @@ df <- data.frame(x,y)
 barplot(df$y, names.arg = df$x, main='Records per file')
 ```
 
-```{r}
+The plot shows that in the blogs, twitter, and news datasets there are `r blog.lines`, `r twit.lines`, and `r news.lines` lines of data.
+
+
+Since the datasets are so large it is possible to use a part of each to understand what the whole dataset looks like. Using the first 100,000 lines from each, unigrams were created to see what words were used in each sample. The following shows how many unique words are used in each dataset.
+
+```{r, message=FALSE}
 con <- file('final/en_US/en_US.blogs.txt',"r")
 blogs <- readLines(con, 100000)
 unigram.b <- tokenize(toLower(blogs), removePunct = TRUE, removeNumbers = TRUE, ngrams =1)
 unigram.b <- unlist(unigram.b)
-unigram.b <- unigram[!duplicated(unigram.b)]
+unigram.b <- unigram.b[!duplicated(unigram.b)]
 rm(blogs)
 con <- file('final/en_US/en_US.twitter.txt',"r")
 twitter <- readLines(con, 100000)
 unigram.t <- tokenize(toLower(twitter), removePunct = TRUE, removeNumbers = TRUE, ngrams =1)
 unigram.t <- unlist(unigram.t)
-unigram.t <- unigram[!duplicated(unigram.t)]
+unigram.t <- unigram.t[!duplicated(unigram.t)]
 rm(twitter)
 con <- file('final/en_US/en_US.news.txt',"r")
 news <- readLines(con, 100000)
 unigram.n <- tokenize(toLower(news), removePunct = TRUE, removeNumbers = TRUE, ngrams =1)
 unigram.n <- unlist(unigram.n)
-unigram.n <- unigram[!duplicated(unigram.n)]
+unigram.n <- unigram.n[!duplicated(unigram.n)]
 rm(news)
 print(length(unigram.b))
 print(length(unigram.t))
 print(length(unigram.n))
 ```
 
+After understanding how many unique words were in each dataset I created a dataset of trigrams or words that come in sets of three in a row to see how frequently certain combinations of words existed in the datasets. Below is a bar chart showing that after the first couple most frequent combinations the following trigrams slowly decrease in frequency of use. 
 
 ```{r}
 tf <- read.table('tf_100k.txt')
@@ -58,6 +64,8 @@ tf.sub <- cbind(tf.sub, 1:30)
 barplot(tf.sub$tf, names.arg = tf.sub$`1:30`, main = 'Top 30 Trigrams', xlab='Rank of Trigram', ylab='Count')
 ```
 
+Below is the five most common n-grams as digrams (2 word), trigrams (3 word), and quadgrams (4 word).
+
 ```{r}
 tf2 <- read.table('tf2_100k.txt',nrows = 5)
 tf3 <- read.table('tf3_100k.txt',nrows = 5)
@@ -65,5 +73,6 @@ tf4 <- read.table('tf4_100k.txt',nrows = 5)
 print(tf2)
 print(tf3)
 print(tf4)
-
 ```
+
+Using the three n-gram datasets it is possible to predict the next word in a sentance. Using the previous known words of a sentance you can try to use the quadgram data to find the most frequent next word. If there is not a quadram that matches the last three known words then you use the last two known words with the trigram data or last word with digram data.
