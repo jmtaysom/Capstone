@@ -1,0 +1,48 @@
+Johns Hopkins Data Science capstone
+========================================================
+author: jmtaysom
+date: 15 January 2015
+transition: rotate
+
+Next Word Predictor
+========================================================
+
+In this project we are using data from swiftkey to do next word predictions.
+
+- N-grams are used to predict the next most likely word
+- Only the most common N-grams are stored to save space
+- If a prediction is not possible the most common word will be predicted
+
+Methodology
+========================================================
+In order to have the greatest accuracy but not have too large of a dataset only quadgrams, trigrams and bigrams are used.
+- First try to predict using a quadgram.
+- If there is no result then predict using a trigram
+- If there is no result then predict using a bigram
+- If there is still no result predict the word 'the' since it is the most common word
+
+Code Example
+========================================================
+Below is the core code used to make predictions. Several lines of data cleaning have been removed to simplify the example. First quadgrams are created, then the top features are found. Then it is possible to use the top features to predict the fourth word.
+```{r, eval=FALSE}
+blog.ngram <- dfm(blogs, ngrams=4:4, verbose=FALSE)
+tf.blog <- topfeatures(blog.ngram, n=ncol(blog.ngram))
+
+tf.blog[tf.blog$V1 == 'merry' & tf.blog$V2 == 'christmas' & tf.blog$V3 == 'and',]$V4
+
+```
+
+Data
+========================================================
+The following are the most common quadgrams with the first three columns being the words that will be used to predict the word in the fourth column. 
+```{r, echo=FALSE}
+tf4 <- read.table('tf4_100k.txt',nrows = 8)
+print(tf4)
+```
+
+User Interface
+========================================================
+In the app there are two windows. The one on the left is for entering text. The one on the right uses up to the last three words from the first window to make a prediction for the next word.
+
+![User Interface Image](Final_Presentation-figure/Word_Predictor_Screenshot.png)
+

@@ -3,7 +3,7 @@
 # tf3 <- read.table(file = 'tf3_100k.txt')
 # tf4 <- read.table(file = 'tf4_100k.txt')
 
-test <- 'Merry '
+test <- "I like how the same people are in almost all of Adam Sandler's"
 
 split <- strsplit(tolower(test), ' ')
 
